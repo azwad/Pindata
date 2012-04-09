@@ -56,7 +56,7 @@ use warnings;
 		use Web::Scraper;
 		my $scraper = scraper {
 			process '//title', 'id' => "TEXT";
-			process '//div[@class="pin"]/div/a', 'permalink[]' => '@href';
+			process '//div[@class="pin"]/div[1]/a', 'permalink[]' => '@href';
 		};
 		my $res = $scraper->scrape($mech->content,$mech->uri);
 		$res->{listurl} = $url;
