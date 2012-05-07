@@ -52,7 +52,11 @@ use warnings;
 		use WWW::Mechanize;
 		my $mech = WWW::Mechanize->new();
 		$mech->agent_alias( 'Windows Mozilla' );
-		$mech->get($uri);
+		eval {$mech->get($uri)};
+		if(@_){
+			$self->{res}->{err} = @_;
+			return $self->{res};
+		}
 		use Web::Scraper;
 		my $scraper = scraper {
 			process '//title', 'id' => "TEXT";
