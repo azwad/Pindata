@@ -40,7 +40,7 @@ use warnings;
 			return $self->{res};
 		}else{
 			print $url."\n";
-			die "no mutch";
+			undef;
 		}
 	}
 
@@ -104,11 +104,17 @@ use warnings;
 				}elsif ($m =~ /year/) {
 					$post_ago = $i*525600;
 				}else{
-						die 'no mutch';
+					$post_ago =	undef;
+#						die 'no mutch';
 				}
 				use DateTime;
 				my $dt_now = DateTime->now( time_zone => 'local' );
-				my $pinned_time = $dt_now->subtract( minutes => $post_ago);
+				my $pinned_time;
+				if (defined $post_ago){
+					$pinned_time = $dt_now->subtract( minutes => $post_ago);
+				}else{
+					$pinned_time = $dt_now;
+				}
 				return $pinned_time->strftime('%Y/%m/%d %H:%M');
 			};
 			process '//div[@class="WhiteContainer clearfix"]',  'paragraph' => scraper {
