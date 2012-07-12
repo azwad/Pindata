@@ -40,7 +40,7 @@ use warnings;
 			return $self->{res};
 		}else{
 			print $url."\n";
-			undef;
+			die "no mutch";
 		}
 	}
 
