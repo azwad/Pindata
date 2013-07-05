@@ -1,7 +1,7 @@
+package Pindata;
 use strict;
 use warnings;
 
-{ package Pindata;
 	sub new {
 		my $proto = shift;
 		my $class = ref $proto || $proto;
@@ -18,6 +18,7 @@ use warnings;
 		}
 		return $self->{url};
 	}
+
 	sub get {
 		my $self = shift;
 		my $url;
@@ -29,66 +30,66 @@ use warnings;
 		if( $url =~ /^http:\/\/pinterest\.com\/pin\/\d+/){
 			$self->get_pindata;
 			return $self->{res};
-		}elsif ( $url =~ /^http:\/\/pinterest\.com\/\w+\/pins\/\?filter=\w+/){
+		}elsif ( $url =~ /^http:\/\/pinterest\.com\/\w+\/(pins|likes)\//){
 			$self->get_pinlist;
 			return $self->{res};
-		}elsif ( $url =~ /^http:\/\/pinterest\.com\/all\/\?category=\w+/){
+		}elsif ( $url =~ /^http:\/\/pinterest\.com\/(popular|all|gifts|videos)\//){
 			$self->get_pinlist;
+			return $self->{res};
+		}elsif ( $url =~ /^http:\/\/pinterest\.com\/all\/\w+\//){
+			$self->get_pinlist;
+			return $self->{res};
+		}elsif ( $url =~ /^http:\/\/pinterest\.com\/source\/.+?\//){
+			$self->{res}->{err} = "need login";
 			return $self->{res};
 		}elsif ( $url =~ /^http:\/\/pinterest\.com\/\w+\/.+?\//){
 			$self->get_pinlist;
 			return $self->{res};
 		}else{
 			print $url."\n";
-			die "no mutch";
+			$self->{res}->{err} = "no mutch";
+			return $self->{res};
 		}
 	}
 
 	sub get_pinlist {
 		my $self = shift;
 		my $url = $self->{url};
-		use URI;
-		my $uri = URI->new($url);
-		use WWW::Mechanize;
-		my $mech = WWW::Mechanize->new();
-		$mech->agent_alias( 'Windows Mozilla' );
-		eval {$mech->get($uri)};
-		if(@_){
-			$self->{res}->{err} = @_;
+		use ScrapeJavascript;
+		my $content = ScrapeJavascript::scrape_javascript($url);		
+		if ($content eq ''){
+			$self->{res}->{err} = "no content";
 			return $self->{res};
 		}
 		use Web::Scraper;
 		my $scraper = scraper {
 			process '//title', 'id' => "TEXT";
-			process '//div[@class="pin"]/div[1]/a', 'permalink[]' => '@href';
+			process '//a[@class="pinImageWrapper "]', 'permalink[]' => '@href';
 		};
-		my $res = $scraper->scrape($mech->content,$mech->uri);
+		my $res = $scraper->scrape($content,$url);
 		$res->{listurl} = $url;
 		$self->{res} = $res;
 		return $self->{res};
 	}
+
 	sub get_pindata {
 		my $self = shift;
 		my $url = $self->{url};
-		use URI;
-		my $uri = URI->new($url);
-		use WWW::Mechanize;
-		my $mech = WWW::Mechanize->new();
-		$mech->agent_alias( 'Windows Mozilla' );
-		eval { $mech->get($uri)};
-		if (@_){
-			$self->{res}->{err} = @_;
+		use ScrapeJavascript;
+		my $content = ScrapeJavascript::scrape_javascript($url);
+		if ($content eq "") {
+			$self->{res}->{err} = "no data";
 			return $self->{res};
-		}
+		}		
 		use Web::Scraper;
 		my $scraper = scraper {
-			process 'id("PinnerStats")', 'date' => sub {
+			process '//span[@class="commentDescriptionTimeAgo"]', 'date' => sub {
 				my $i;
 				my $m;
 				my $t = $_->as_text;
-				if ($t =~ /(Pinn|Repinn|Upload)ed\s+(\d+)\s+(\w+)/){
-					$i = $2;
-					$m = $3;
+				if ($t =~ /.+?(\d+)\s+(\w+)/){
+					$i = $1;
+					$m = $2;
 				}
 				my $post_ago;
 				if ($m =~ /minute/) {
@@ -105,7 +106,6 @@ use warnings;
 					$post_ago = $i*525600;
 				}else{
 					$post_ago =	undef;
-#						die 'no mutch';
 				}
 				use DateTime;
 				my $dt_now = DateTime->now( time_zone => 'local' );
@@ -117,18 +117,18 @@ use warnings;
 				}
 				return $pinned_time->strftime('%Y/%m/%d %H:%M');
 			};
-			process '//div[@class="WhiteContainer clearfix"]',  'paragraph' => scraper {
-				process 'id("PinCaption")/text()', 'caption' => 'TEXT';
-				process 'id("PinImageHolder")/a/img',   'imgsource' => '@src';
-				process 'id("PinImageHolder")/a', 'orgsource' => '@href';
-				process '//div[1]/p[1]/a[1]', 'pinner' => 'TEXT';
+			process '//head', 'paragraph' => scraper {
+				process '//meta[@property="og:description"]', 'caption' => '@content';
+				process '//meta[@property="og:image"]',  'imgsource' => '@content';
+				process '//meta[@property="og:see_also"]', 'orgsource' => '@content';
+				process '//meta[@property="twitter:creator"]', 'pinner' => '@content';
 			};
 		};
-		my $res = $scraper->scrape($mech->content,$mech->uri);
+		my $res = $scraper->scrape($content,$url);
 		$res->{link} = $url;
 		$self->{res} = $res;
 		return $self->{res};
 	}
-}
+
 1;
 

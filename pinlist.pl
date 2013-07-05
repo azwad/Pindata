@@ -2,22 +2,20 @@
 use strict;
 use warnings;
 use YAML;
-#use lib qw(/home/toshi/perl/lib);
 use Pindata;
-
+#use lib qw(/home/toshi/perl/lib);
+#use HashDump;
 
 my @urls = (
-#						'http://pinterest.com/leetmaz/architecture/',
-#						'http://pinterest.com/maako/beautiful-women/',
-#						'http://pinterest.com/toshi0104/persons/',
+						'http://pinterest.com/popular/',
+						'http://pinterest.com/all/animals/',
+						'http://pinterest.com/maako/beautiful-women/',
+						'http://pinterest.com/toshi0104/persons/',
 						'http://pinterest.com/toshi0104/likes/',
-#						'http://pinterest.com/angelacg/photography/',
-						'http://pinterest.com/johnrmath/art-photography-i-like/',
-#						'http://pinterest.com/vsharmanov/beauty-in-b-w/',
+						'http://pinterest.com/angelacg/photography/',
+#						'http://pinterest.com/source/liquige.tumblr.com/'
 						);
 
-
-#my @urls = ( $url1, $url2, $url3 );
 
 my @pinlist;
 foreach  my $url (@urls){
@@ -25,12 +23,14 @@ foreach  my $url (@urls){
 	my $pinlist = Pindata->new();
 	$pinlist->url($url);
 	my $res = $pinlist->get;
-	print "on error : " . $res->{err} ."\n";
+	print "on error : " . $res->{err} ."\n" if $res->{err};
 	push (@pinlist, @{$res->{permalink}}) if $res->{permalink};
 }
 
+#my $pinlist = \@pinlist;
 
-print Dump(@pinlist);
+#HashDump->load($pinlist);
+
 
 foreach my $permalink (@pinlist){
 	print "get pindata $permalink\n";
