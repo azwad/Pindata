@@ -1,7 +1,7 @@
 package Pindata;
 use strict;
 use warnings;
-
+use Encode;
 	sub new {
 		my $proto = shift;
 		my $class = ref $proto || $proto;
@@ -61,10 +61,11 @@ use warnings;
 			$self->{res}->{err} = "no content";
 			return $self->{res};
 		}
+		print encode_utf8($content); 
 		use Web::Scraper;
-		my $scraper = scraper {
+				my $scraper = scraper {
 			process '//title', 'id' => "TEXT";
-			process '//a[@class="pinImageWrapper "]', 'permalink[]' => '@href';
+			process '//div[@class="pinHolder"]/a', 'permalink[]' => '@href';
 		};
 		my $res = $scraper->scrape($content,$url);
 		$res->{listurl} = $url;
