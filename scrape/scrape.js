@@ -1,5 +1,5 @@
 var page = require('webpage').create();
-var url = 'http://pinterest.com/pin/5418462023730672/';
+var url = 'http://pinterest.com/popular';
 page.open(url,function(status){
 	var html = page.content;
 	console.log(html);
